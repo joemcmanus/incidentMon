@@ -1,0 +1,21 @@
+#Startup file for the website
+#Put file in /lib/systemd/system
+#run systemctl enable incidentMon.service 
+
+[Unit]
+Description=Grafana Incident Monitor
+After=network.target
+Wants=mosquitto.service
+
+[Service]
+Type=idle
+PIDFile=/var/run/incidentMon.pid
+WorkingDirectory=/home/joe/incidentMon
+ExecStart=/usr/bin/python3 ./incidentMon.py --pid
+RestartSec=30s
+Restart=always
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target

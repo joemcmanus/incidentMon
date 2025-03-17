@@ -1,0 +1,4 @@
+[default]
+url=https://example.grafana.com/api/plugins/grafana-incident-app/resources/api/v1/IncidentsService.QueryIncidentPreviews
+token=
+broker=192.168.1.2
