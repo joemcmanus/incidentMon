@@ -64,7 +64,7 @@ def getIncident(url, token):
 		return(None, None, None, None, None)
 
 def convertToLocalTime(incidentStart):
-	incidentStart=incidentStart[:-8]
+	incidentStart=incidentStart[:+15]	
 	utcTime = datetime.strptime(incidentStart, '%Y-%m-%dT%H:%M')
 	utcTime = utcTime.replace(tzinfo=tz.tzutc())
 	localTime=str(utcTime.astimezone(tz.tzlocal()))[:-9]
