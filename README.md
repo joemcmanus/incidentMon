@@ -48,6 +48,15 @@ You can send messages using mosquitto to test.
     joe@jetson-3:~/incidentMon# mosquitto_pub -t ledOne -m "4" #Turns all lights red
     joe@jetson-3:~/incidentMon# mosquitto_pub -t ledOne -m "5" #Turns all lights white
 
+Python Troubleshooting
+---
+If you want verbose output you can pass `--debug(1|2)`.
+
+ `--debug=1` will output config settings. 
+
+ `--debug=2` will output config + dump json + print the token in use
+
+
 # Python Options
 
     joe@jetson-3:~/incidentMon# ./incidentMon.py --help 
@@ -62,6 +71,15 @@ You can send messages using mosquitto to test.
       --pid            Create a pid file in /var/run/incidentMon.pid
       --config CONFIG  Override config file location, default ./incidentMon.cfg
       --delay DELAY    Specify delay between checks, default 60s
+      --mqtt MQTT      Enable MQTT, default true
+      --security       Only act on Security incidents, ignore everything else
 
 
+# Monitor security alerts only.
+If you want to just monitor security alerts you can add `--security` .
 
+# Skip MQTT
+You may want to test your configuration or maybe have a terminal open just constantly watching the IRM api. To do that you can pass`--mqtt=false` to avoid sending data to your MQTT broker. 
+
+# Token Handling
+You probably don't want to store your API key(token) in plain text. You can use the environment variable `IRM_TOKEN` to store the API key. 

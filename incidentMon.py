@@ -3,7 +3,7 @@
 # In this case, an LED on a ESP32
 # File    : incidentMon.py
 # Author  : Joe McManus josephmc@alumni.cmu.edu
-# Version : 0.1 03/15/2025
+# Version : 0.2 03/18/2025
 # Copyright (C) 2025 Joe McManus
 
 # This program is free software: you can redistribute it and/or modify
@@ -28,12 +28,17 @@ import argparse
 import json
 import requests
 import paho.mqtt.publish as pub
+from datetime import datetime
+from dateutil import tz
 
 parser = argparse.ArgumentParser(description='Grafana IRM  Monitor')
 parser.add_argument('--debug', help="Turn on debug mode, levels 0-2,0=none, 1=info,2=dumps json", action="store", type=int, default=0)
 parser.add_argument('--pid', help="Create a pid file in /var/run/incidentMon.pid",  action="store_true")
 parser.add_argument('--config', help="Override config file location, default ./incidentMon.cfg", action="store")
 parser.add_argument('--delay', help="Specify delay, default 60s", type=int, default=60, action="store")
+parser.add_argument('--mqtt', help="Enable MQTT, default true", type=str, default="true", action="store")
+parser.add_argument('--security', help="Only act on Security incidents, ignore everything else",  action="store_true")
+
 args=parser.parse_args()
 
 if args.pid:
@@ -43,13 +48,9 @@ if args.pid:
 
 def getIncident(url, token):
 	headers={'Authorization': 'Bearer ' + token }
-	payload={"query":
-			{ "limit": 1,
-				"orderDirection": "DESC",
-				"orderField": "createdTime",
-				"queryString": "isdrill:false"
-			 }
-		}
+	payload={"query": { "limit": 1, "orderDirection": "DESC", "orderField": "createdTime", "queryString": "isdrill:false" } }
+	if args.security:
+		payload={"query": { "limit": 1, "orderDirection": "DESC", "orderField": "createdTime", "queryString": "isdrill:false or label:security" } }
 	jsonLoad=json.dumps(payload)
 	try:
 		r=requests.post(url, headers=headers, data=jsonLoad, timeout=30)
@@ -61,6 +62,13 @@ def getIncident(url, token):
 		return(incidentID, incidentSev, incidentStart, incidentJson, r.status_code)
 	except:
 		return(None, None, None, None, None)
+
+def convertToLocalTime(incidentStart):
+	incidentStart=incidentStart[:-8]
+	utcTime = datetime.strptime(incidentStart, '%Y-%m-%dT%H:%M')
+	utcTime = utcTime.replace(tzinfo=tz.tzutc())
+	localTime=str(utcTime.astimezone(tz.tzlocal()))[:-9]
+	return localTime
         
 config=configparser.ConfigParser()
 if args.config:
@@ -91,6 +99,8 @@ backOff=0
 #loop forever looking for new alerts
 while True:
 	incidentID, incidentSev, incidentStart,incidentJson, requestReturnCode=getIncident(url, token)
+	#convert to localtime
+	incidentStart=convertToLocalTime(incidentStart)
 	if args.debug >= 1:
 		if args.debug == 2:
 			pprint.pp(incidentJson)
@@ -120,9 +130,10 @@ while True:
 			sev=3
 		elif incidentSev == "Critical":
 			sev=4
-		print("Alert ID: %d Severity %s alert " % (incidentID, incidentSev))
+		print("Alert ID: %d Severity %s alert Start Time: %s " % (incidentID, incidentSev, incidentStart))
 		lastIncident=incidentID
-		pub.single('ledOne', sev, hostname=broker)
+		if args.mqtt == "true":
+			pub.single('ledOne', sev, hostname=broker)
 		counter=0
 	elif incidentID == lastIncident:
 		counter+=1
