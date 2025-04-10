@@ -81,5 +81,7 @@ If you want to just monitor security alerts you can add `--security` .
 # Skip MQTT
 You may want to test your configuration or maybe have a terminal open just constantly watching the IRM api. To do that you can pass`--mqtt=false` to avoid sending data to your MQTT broker. 
 
+    joe@jetson-3:~/incidentMon# ./incidentMon.py --mqtt=false --security
+
 # Token Handling
 You probably don't want to store your API key(token) in plain text. You can use the environment variable `IRM_TOKEN` to store the API key. 
